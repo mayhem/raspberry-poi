@@ -1,4 +1,4 @@
-#include <FreeSixIMU.h>
+#include <FreeIMU.h>
 #include <FIMU_ADXL345.h>
 #include <FIMU_ITG3200.h>
 #include <Wire.h>
@@ -9,8 +9,8 @@ uint8_t green_pin = 11;
 
 float angles[3]; // yaw pitch roll
 
-// Set the FreeSixIMU object
-FreeSixIMU sixDOF = FreeSixIMU();
+// Set the FreeIMU object
+FreeIMU sixDOF = FreeIMU();
 
 void setup() 
 { 
@@ -26,7 +26,7 @@ void loop()
 { 
     uint8_t i; 
 
-    sixDOF.getEuler(angles);
+    sixDOF.getYawPitchRoll(angles);
 
 //    for(i = 0; i < 3; i++)
 //    {
@@ -39,9 +39,9 @@ void loop()
 //    analogWrite(green_pin, int(angles[1]));
 //    analogWrite(blue_pin, int(angles[2]));
 
-    Serial.print(angles[0]);
+    Serial.print(int(angles[0]));
     Serial.print(",");  
-    Serial.print(angles[1]);
+    Serial.print(int(angles[1]));
     Serial.print(",");
-    Serial.println(angles[2]);
+    Serial.println(int(angles[2]));
 }
