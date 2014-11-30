@@ -28,22 +28,20 @@ void loop()
 
     sixDOF.getEuler(angles);
 
-    for(i = 0; i < 3; i++)
-    {
-        angles[i] /= 360;
-        angles[i] += .5;
-        angles[i] *= 255;
-    }
+//    for(i = 0; i < 3; i++)
+//    {
+//        angles[i] /= 360;
+//        angles[i] += .5;
+//        angles[i] *= 255;
+//    }
 
-    analogWrite(red_pin, int(angles[0]));
-    analogWrite(green_pin, int(angles[1]));
-    analogWrite(blue_pin, int(angles[2]));
+//    analogWrite(red_pin, int(angles[0]));
+//    analogWrite(green_pin, int(angles[1]));
+//    analogWrite(blue_pin, int(angles[2]));
 
     Serial.print(angles[0]);
     Serial.print(",");  
     Serial.print(angles[1]);
     Serial.print(",");
     Serial.println(angles[2]);
-
-    delay(50); 
 }
