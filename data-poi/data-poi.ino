@@ -1,6 +1,7 @@
-#include <FreeIMU.h>
+#include <FreeSixIMU.h>
 #include <FIMU_ADXL345.h>
 #include <FIMU_ITG3200.h>
+
 #include <Wire.h>
 
 uint8_t red_pin = 10;
@@ -9,8 +10,8 @@ uint8_t green_pin = 11;
 
 float angles[3]; // yaw pitch roll
 
-// Set the FreeIMU object
-FreeIMU sixDOF = FreeIMU();
+// Set the FreeSixIMU object
+FreeSixIMU sixDOF = FreeSixIMU();
 
 void setup() 
 { 
