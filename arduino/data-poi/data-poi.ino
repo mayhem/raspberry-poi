@@ -9,6 +9,7 @@ uint8_t blue_pin = 9;
 uint8_t green_pin = 11;
 
 float angles[3]; // yaw pitch roll
+float eu_angles[3];
 
 // Set the FreeSixIMU object
 FreeSixIMU sixDOF = FreeSixIMU();
@@ -27,22 +28,11 @@ void loop()
 { 
     uint8_t i; 
 
-    sixDOF.getYawPitchRoll(angles);
+    sixDOF.getEuler(eu_angles);
 
-//    for(i = 0; i < 3; i++)
-//    {
-//        angles[i] /= 360;
-//        angles[i] += .5;
-//        angles[i] *= 255;
-//    }
-
-//    analogWrite(red_pin, int(angles[0]));
-//    analogWrite(green_pin, int(angles[1]));
-//    analogWrite(blue_pin, int(angles[2]));
-
-    Serial.print(int(angles[0]));
+    Serial.print(int(eu_angles[0]));
     Serial.print(",");  
-    Serial.print(int(angles[1]));
+    Serial.print(int(eu_angles[1]));
     Serial.print(",");
-    Serial.println(int(angles[2]));
+    Serial.println(int(eu_angles[2]));    
 }
