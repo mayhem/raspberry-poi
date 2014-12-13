@@ -89,9 +89,12 @@ def replay(client, args, replay):
 
         ts = int(ts)
         index = int(index)
+        x = float(x)
+        y = float(y)
+        z = float(z)
 
         if args.test:
-            print "%s,%d,%s,%s,%s" % (ts, index, x, y, z)
+            print "%d,%d,%.3f,%.3f,%.3f" % (ts, index, x, y, z)
 
         if not args.noxmit:
             send_osc(args.ip, args.port, index, "x", x)
