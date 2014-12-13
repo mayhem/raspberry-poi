@@ -82,7 +82,9 @@ def replay(args, replay):
     while True:
         line = replay.readline()
         if not line:
-            break
+            print "Reached end of file, starting over again"
+            replay.seek(0)
+            continue
         
         try:
             ts, index, x, y, z = line.strip().split(",")
@@ -165,7 +167,6 @@ if __name__ == "__main__":
 
     print "Listening from %s" % args.device
     print "Sending to %s:%d" % (args.ip, args.port)
-
 
     if args.log:
         try:
