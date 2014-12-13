@@ -7,8 +7,40 @@ import time
 import math
 import argparse
 import OSC
+import errno
 
 BAUD_RATE = 38400
+
+def connect_poi(poi, device):
+    while True:
+        try:
+            print "Connecting to %s..." % device
+            ser = serial.Serial(device, 
+                                BAUD_RATE, 
+                                bytesize=serial.EIGHTBITS, 
+                                parity=serial.PARITY_NONE, 
+                                stopbits=serial.STOPBITS_ONE,
+                                timeout=1)
+        except serial.serialutil.SerialException, e:
+            print "Serial error: ", e
+            sys.exit(-1)
+        except OSError, e:
+            if e.errno == errno.EBUSY:
+                print "Poi %d is busy. Sleep 1 second." % poi
+                time.sleep(1)
+                continue
+                
+            print "OS error: ", e
+            sys.exit(-1)
+
+        break
+
+    print "connected."
+
+    ser.flushInput()
+    ser.flushOutput()
+
+    return ser
 
 def send_osc(ip, port, index, key, value):
     msg = OSC.OSCMessage()
@@ -16,38 +48,56 @@ def send_osc(ip, port, index, key, value):
     msg.append(value)
     client.sendto(msg, (ip, port))
 
-def main_loop(ser, client, args):
+def process_line(poi, line):
+    try:
+        ts, yaw, pitch, roll = line.strip().split(",")
+    except ValueError as e:
+        return
+
+    line  = ""
+
+    theta = math.radians(float(roll))
+    phi = math.radians(float(pitch))
+    x = math.sin(theta) * math.cos(phi)
+    y = math.sin(theta) * math.sin(phi)
+    z = math.cos(theta)
+
+    if args.test:
+        print "%s,%d,%.3f,%.3f,%.3f" % (ts, poi, x, y, z)
+    else:
+        send_osc(args.ip, args.port, poi, "x", x)
+        send_osc(args.ip, args.port, poi, "y", y)
+        send_osc(args.ip, args.port, poi, "z", z)
+        send_osc(args.ip, args.port, poi, "ts", ts)
+
+def main_loop(poi1, poi2, client, args):
     line = ""
+    line2 = ""
     while True:
-        ch = ser.read()
+        ch = poi1.read()
         if not ch:
             print "Timeout"
             continue
 
-        if ch != '\n':
-            line += ch
-            continue
-
-        try:
-            ts, yaw, pitch, roll = line.strip().split(",")
-        except ValueError as e:
-            continue
-
-        line  = ""
-
-        theta = math.radians(float(roll))
-        phi = math.radians(float(pitch))
-        x = math.sin(theta) * math.cos(phi)
-        y = math.sin(theta) * math.sin(phi)
-        z = math.cos(theta)
-
-        if args.test:
-            print "%s,%.3f,%.3f,%.3f" % (ts, x, y, z)
+        if ch == '\n':
+            process_line(0, line)
+            line = ""
         else:
-            send_osc(args.ip, args.port, 0, "x", x)
-            send_osc(args.ip, args.port, 0, "y", y)
-            send_osc(args.ip, args.port, 0, "z", z)
-            send_osc(args.ip, args.port, 0, "ts", ts)
+            line += ch
+
+        if poi2:
+            ch2 = poi2.read()
+            if not ch:
+                print "Timeout"
+                continue
+        else:
+            ch2 = ""
+
+        if ch2 == '\n':
+            process_line(1, line2)
+            line2 = ""
+        else:
+            line2 += ch2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -58,7 +108,9 @@ if __name__ == "__main__":
     parser.add_argument("--port",
                         type=int, default=9000, help="The port to broadcast to")
     parser.add_argument("--device",
-                        default="", help="The serial device to read poi data from")
+                        default="", help="The first serial device to read poi data from")
+    parser.add_argument("--device2",
+                        default="", help="The second serial device to read poi data from")
     args = parser.parse_args()
 
     if args.device == "":
@@ -71,27 +123,15 @@ if __name__ == "__main__":
     client = OSC.OSCClient()
 
     try:
-        print "Connecting to Poi..."
-        ser = serial.Serial(args.device, 
-                            BAUD_RATE, 
-                            bytesize=serial.EIGHTBITS, 
-                            parity=serial.PARITY_NONE, 
-                            stopbits=serial.STOPBITS_ONE,
-                            timeout=1)
-    except serial.serialutil.SerialException, e:
-        print "Serial error: ", e
-        sys.exit(-1)
-    except OSError, e:
-        print "OS error: ", e
-        sys.exit(-1)
+        poi1 = connect_poi(1, args.device)
+        if args.device2:
+            poi2 = connect_poi(2, args.device2)
+        else:
+            poi2 = None
 
-    print "connected."
-
-    ser.flushInput()
-    ser.flushOutput()
-
-    try:
-        main_loop(ser, client, args)
+        main_loop(poi1, poi2, client, args)
     except KeyboardInterrupt:
         print "cleaning up..."
-        ser.close(ser)
+        poi1.close()
+        if poi2:
+            poi2.close()
