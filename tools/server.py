@@ -48,7 +48,7 @@ def send_osc(ip, port, index, key, value):
     msg.append(value)
     client.sendto(msg, (ip, port))
 
-def process_line(poi, line):
+def process_line(poi, line, log):
     try:
         ts, yaw, pitch, roll = line.strip().split(",")
     except ValueError as e:
@@ -64,13 +64,17 @@ def process_line(poi, line):
 
     if args.test:
         print "%s,%d,%.3f,%.3f,%.3f" % (ts, poi, x, y, z)
-    else:
+
+    if args.log:
+        log.write("%s,%d,%.3f,%.3f,%.3f\n" % (ts, poi, x, y, z))
+
+    if not args.noxmit:
         send_osc(args.ip, args.port, poi, "x", x)
         send_osc(args.ip, args.port, poi, "y", y)
         send_osc(args.ip, args.port, poi, "z", z)
         send_osc(args.ip, args.port, poi, "ts", ts)
 
-def main_loop(poi1, poi2, client, args):
+def main_loop(poi1, poi2, client, args, log):
     line = ""
     line2 = ""
     while True:
@@ -80,7 +84,7 @@ def main_loop(poi1, poi2, client, args):
             continue
 
         if ch == '\n':
-            process_line(0, line)
+            process_line(0, line, log)
             line = ""
         else:
             line += ch
@@ -94,7 +98,7 @@ def main_loop(poi1, poi2, client, args):
             ch2 = ""
 
         if ch2 == '\n':
-            process_line(1, line2)
+            process_line(1, line2, log)
             line2 = ""
         else:
             line2 += ch2
@@ -103,14 +107,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--test", action='store_true',
                         default=False, help="Instead of broadcasting, print data to console")
+    parser.add_argument("--log", 
+                        default="", help="Log data to the specified file")
     parser.add_argument("--ip",
-                        default="127.0.0.1", help="The ip to broadcast to")
+                        default="127.0.0.1", help="The ip to broadcast to. Default: localhost")
     parser.add_argument("--port",
-                        type=int, default=9000, help="The port to broadcast to")
+                        type=int, default=9000, help="The port to broadcast to. Default: 9000")
     parser.add_argument("--device",
                         default="", help="The first serial device to read poi data from")
     parser.add_argument("--device2",
                         default="", help="The second serial device to read poi data from")
+    parser.add_argument("--noxmit", action='store_true',
+                        default=False, help="Do not send data to pure data. (default: off)")
     args = parser.parse_args()
 
     if args.device == "":
@@ -122,6 +130,15 @@ if __name__ == "__main__":
 
     client = OSC.OSCClient()
 
+    if args.log:
+        try:
+            log = open(args.log, "w")
+        except OSError as e:
+            print "Failed to open log file: ", e
+            sys.exit(-1)
+    else:
+        log = None
+
     try:
         poi1 = connect_poi(1, args.device)
         if args.device2:
@@ -129,9 +146,11 @@ if __name__ == "__main__":
         else:
             poi2 = None
 
-        main_loop(poi1, poi2, client, args)
+        main_loop(poi1, poi2, client, args, log)
     except KeyboardInterrupt:
         print "cleaning up..."
         poi1.close()
         if poi2:
             poi2.close()
+        if log:
+            log.close()
