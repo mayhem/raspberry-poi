@@ -84,6 +84,8 @@ void loop()
     y = sin(theta) * sin(phi);
     z = cos(theta);
     
+    Serial.print(micros());
+    Serial.print(","); 
     Serial.print(int(angles[0]));
     Serial.print(",");  
     Serial.print(int(angles[1]));
