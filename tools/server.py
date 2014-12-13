@@ -10,6 +10,7 @@ import OSC
 import errno
 
 BAUD_RATE = 38400
+SAMPLE_DELAY = .01
 
 def connect_poi(poi, device):
     while True:
@@ -74,6 +75,35 @@ def process_line(poi, line, log):
         send_osc(args.ip, args.port, poi, "z", z)
         send_osc(args.ip, args.port, poi, "ts", ts)
 
+def replay(client, args, replay):
+    count = 0
+    while True:
+        line = replay.readline()
+        if not line:
+            break
+        
+        try:
+            ts, index, x, y, z = line.strip().split(",")
+        except ValueError as e:
+            return
+
+        ts = int(ts)
+        index = int(index)
+
+        if args.test:
+            print "%s,%d,%s,%s,%s" % (ts, index, x, y, z)
+
+        if not args.noxmit:
+            send_osc(args.ip, args.port, index, "x", x)
+            send_osc(args.ip, args.port, index, "y", y)
+            send_osc(args.ip, args.port, index, "z", z)
+            send_osc(args.ip, args.port, index, "ts", ts)
+
+        if count % 2 == 0:
+            time.sleep(SAMPLE_DELAY)
+
+        count += 1
+
 def main_loop(poi1, poi2, client, args, log):
     line = ""
     line2 = ""
@@ -109,20 +139,26 @@ if __name__ == "__main__":
                         default=False, help="Instead of broadcasting, print data to console")
     parser.add_argument("--log", 
                         default="", help="Log data to the specified file")
+    parser.add_argument("--replay", 
+                        default="", help="Replay a given log file")
     parser.add_argument("--ip",
                         default="127.0.0.1", help="The ip to broadcast to. Default: localhost")
     parser.add_argument("--port",
                         type=int, default=9000, help="The port to broadcast to. Default: 9000")
     parser.add_argument("--device",
-                        default="", help="The first serial device to read poi data from. Required.")
+                        default="", help="The first serial device to read poi data from. Required, unless --replay is used")
     parser.add_argument("--device2",
                         default="", help="The second serial device to read poi data from. Optional.")
     parser.add_argument("--noxmit", action='store_true',
                         default=False, help="Do not send data to pure data. (default: off)")
     args = parser.parse_args()
 
-    if args.device == "":
-        print "Must specify --device"
+    if args.device == "" and not args.replay:
+        print "Must specify --device or --replay"
+        sys.exit(-1)
+
+    if args.replay and args.log:
+        print "Canont specify --replay and --log at the same time."
         sys.exit(-1)
 
     print "Listening from %s" % args.device
@@ -139,14 +175,29 @@ if __name__ == "__main__":
     else:
         log = None
 
+    if args.replay:
+        try:
+            replay_file = open(args.replay, "r")
+        except OSError as e:
+            print "Failed to open replay file: ", e
+            sys.exit(-1)
+    else:
+        replay = None
+
     try:
-        poi1 = connect_poi(1, args.device)
+        if args.device:
+            poi1 = connect_poi(1, args.device)
+        else:
+            poi1 = None
         if args.device2:
             poi2 = connect_poi(2, args.device2)
         else:
             poi2 = None
 
-        main_loop(poi1, poi2, client, args, log)
+        if args.replay:
+            replay(client, args, replay_file)
+        else:
+            main_loop(poi1, poi2, client, args, log)
     except KeyboardInterrupt:
         print "cleaning up..."
         poi1.close()
