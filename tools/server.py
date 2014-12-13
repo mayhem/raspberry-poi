@@ -11,6 +11,7 @@ import errno
 
 BAUD_RATE = 38400
 SAMPLE_DELAY = .01
+AV_SCALE_FACTOR = 1000
 
 client = OSC.OSCClient()
 
@@ -29,8 +30,8 @@ def connect_poi(poi, device):
             sys.exit(-1)
         except OSError, e:
             if e.errno == errno.EBUSY:
-                print "Poi %d is busy. Sleep 1 second." % poi
-                time.sleep(1)
+                print "Poi %d is busy. Sleep 3 seconds." % poi
+                time.sleep(3)
                 continue
                 
             print "OS error: ", e
@@ -54,11 +55,25 @@ def send_osc(ip, port, index, x, y, z, ts):
     msg.append(ts)
     client.sendto(msg, (ip, port))
 
-def process_line(poi, line, log):
+def dotproduct(v1, v2):
+    return sum((a*b) for a, b in zip(v1, v2))
+
+def length(v):
+    return math.sqrt(dotproduct(v, v))
+
+def angle_between_vectors(v1, v2):
+    dp = dotproduct(v1, v2)
+    if dp > 1.0:
+        dp = 1.0
+    if dp < -1.0:
+        dp = -1.0
+    return math.acos(dp)
+
+def process_line(poi, line, log, last_v, last_t):
     try:
         ts, yaw, pitch, roll = line.strip().split(",")
     except ValueError as e:
-        return
+        return ((0,0,0), 0)
 
     line  = ""
 
@@ -67,15 +82,19 @@ def process_line(poi, line, log):
     x = math.sin(theta) * math.cos(phi)
     y = math.sin(theta) * math.sin(phi)
     z = math.cos(theta)
+    ts = int(ts)
 
+    av = angle_between_vectors((x, y, z), last_v) * AV_SCALE_FACTOR 
     if args.test:
-        print "%s,%d,%.3f,%.3f,%.3f" % (ts, poi, x, y, z)
+        print "%d,%d,%.4f,%.4f,%.4f,%.4f" % (ts, poi, x, y, z, av)
 
     if args.log:
-        log.write("%s,%d,%.3f,%.3f,%.3f\n" % (ts, poi, x, y, z))
+        log.write("%d,%d,%.4f,%.4f,%.4f,%.4f\n" % (ts, poi, x, y, z, av))
 
     if not args.noxmit:
-        send_osc(args.ip, args.port, poi, x, y, z, ts)
+        send_osc(args.ip, args.port, poi, x, y, z, ts, av)
+
+    return ((x, y, z), ts)
 
 def replay(args, replay):
     count = 0
@@ -87,21 +106,26 @@ def replay(args, replay):
             continue
         
         try:
-            ts, index, x, y, z = line.strip().split(",")
+            ts, index, x, y, z, av = line.strip().split(",")
         except ValueError as e:
-            return
+            try:
+                ts, index, x, y, z = line.strip().split(",")
+                av = "0"
+            except ValueError as e:
+                return
 
         ts = int(ts)
         index = int(index)
         x = float(x)
         y = float(y)
         z = float(z)
+        av = float(av)
 
         if args.test:
-            print "%d,%d,%.3f,%.3f,%.3f" % (ts, index, x, y, z)
+            print "%d,%d,%.3f,%.3f,%.3f,%.4f" % (ts, index, x, y, z, av)
 
         if not args.noxmit:
-            send_osc(args.ip, args.port, index, x, y, z, ts)
+            send_osc(args.ip, args.port, index, x, y, z, ts, av)
 
         if count % 2 == 0:
             time.sleep(SAMPLE_DELAY)
@@ -111,6 +135,10 @@ def replay(args, replay):
 def main_loop(poi1, poi2, args, log):
     line = ""
     line2 = ""
+    last_0_vector = [0, 0, 1]
+    last_1_vector = [0, 0, 1]
+    last_0_ts = 0
+    last_1_ts = 0
     while True:
         ch = poi1.read()
         if not ch:
@@ -118,7 +146,7 @@ def main_loop(poi1, poi2, args, log):
             continue
 
         if ch == '\n':
-            process_line(0, line, log)
+            last_0_vector, last_0_ts = process_line(0, line, log, last_0_vector, last_0_ts)
             line = ""
         else:
             line += ch
@@ -132,7 +160,7 @@ def main_loop(poi1, poi2, args, log):
             ch2 = ""
 
         if ch2 == '\n':
-            process_line(1, line2, log)
+            last_1_vector, last_1_ts = process_line(1, line2, log, last_1_vector, last_1_ts)
             line2 = ""
         else:
             line2 += ch2
