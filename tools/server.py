@@ -203,7 +203,8 @@ if __name__ == "__main__":
             main_loop(poi1, poi2, client, args, log)
     except KeyboardInterrupt:
         print "cleaning up..."
-        poi1.close()
+        if poi1:
+            poi1.close()
         if poi2:
             poi2.close()
         if log:
