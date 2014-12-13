@@ -114,9 +114,9 @@ if __name__ == "__main__":
     parser.add_argument("--port",
                         type=int, default=9000, help="The port to broadcast to. Default: 9000")
     parser.add_argument("--device",
-                        default="", help="The first serial device to read poi data from")
+                        default="", help="The first serial device to read poi data from. Required.")
     parser.add_argument("--device2",
-                        default="", help="The second serial device to read poi data from")
+                        default="", help="The second serial device to read poi data from. Optional.")
     parser.add_argument("--noxmit", action='store_true',
                         default=False, help="Do not send data to pure data. (default: off)")
     args = parser.parse_args()
