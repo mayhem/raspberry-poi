@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--ip",
                     default="127.0.0.1", help="The ip to broadcast to")
 parser.add_argument("--port",
-                    type=int, default=5000, help="The port to broadcast to")
+                    type=int, default=9000, help="The port to broadcast to")
 parser.add_argument("--device",
                     default="", help="The serial device to read poi data from")
 args = parser.parse_args()
