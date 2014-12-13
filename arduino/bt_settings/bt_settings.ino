@@ -15,7 +15,13 @@ void setup()
     delay(1000);
     
     // Low latency, fast reconnect
-    Serial.println("SQ,144");
+    //Serial.println("SQ,144");
+    
+    // Low latency
+    //Serial.println("SQ,16");
+    
+    // no special options
+    Serial.println("SQ,0");
     delay(1000);
     
     Serial.println("R,1");
