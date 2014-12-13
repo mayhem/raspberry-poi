@@ -12,6 +12,8 @@ import errno
 BAUD_RATE = 38400
 SAMPLE_DELAY = .01
 
+client = OSC.OSCClient()
+
 def connect_poi(poi, device):
     while True:
         try:
@@ -43,10 +45,13 @@ def connect_poi(poi, device):
 
     return ser
 
-def send_osc(ip, port, index, key, value):
+def send_osc(ip, port, index, x, y, z, ts):
     msg = OSC.OSCMessage()
-    msg.setAddress("/rpoi-%d/%s" % (index, key))
-    msg.append(value)
+    msg.setAddress("/rpoi-%d" % index)
+    msg.append(x)
+    msg.append(y)
+    msg.append(z)
+    msg.append(ts)
     client.sendto(msg, (ip, port))
 
 def process_line(poi, line, log):
@@ -70,12 +75,9 @@ def process_line(poi, line, log):
         log.write("%s,%d,%.3f,%.3f,%.3f\n" % (ts, poi, x, y, z))
 
     if not args.noxmit:
-        send_osc(args.ip, args.port, poi, "x", x)
-        send_osc(args.ip, args.port, poi, "y", y)
-        send_osc(args.ip, args.port, poi, "z", z)
-        send_osc(args.ip, args.port, poi, "ts", ts)
+        send_osc(args.ip, args.port, poi, x, y, z, ts)
 
-def replay(client, args, replay):
+def replay(args, replay):
     count = 0
     while True:
         line = replay.readline()
@@ -97,17 +99,14 @@ def replay(client, args, replay):
             print "%d,%d,%.3f,%.3f,%.3f" % (ts, index, x, y, z)
 
         if not args.noxmit:
-            send_osc(args.ip, args.port, index, "x", x)
-            send_osc(args.ip, args.port, index, "y", y)
-            send_osc(args.ip, args.port, index, "z", z)
-            send_osc(args.ip, args.port, index, "ts", ts)
+            send_osc(args.ip, args.port, index, x, y, z, ts)
 
         if count % 2 == 0:
             time.sleep(SAMPLE_DELAY)
 
         count += 1
 
-def main_loop(poi1, poi2, client, args, log):
+def main_loop(poi1, poi2, args, log):
     line = ""
     line2 = ""
     while True:
@@ -147,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--ip",
                         default="127.0.0.1", help="The ip to broadcast to. Default: localhost")
     parser.add_argument("--port",
-                        type=int, default=9000, help="The port to broadcast to. Default: 9000")
+                        type=int, default=9000, help="The port to broadcast poi 1 to. Default: 9000")
     parser.add_argument("--device",
                         default="", help="The first serial device to read poi data from. Required, unless --replay is used")
     parser.add_argument("--device2",
@@ -167,7 +166,6 @@ if __name__ == "__main__":
     print "Listening from %s" % args.device
     print "Sending to %s:%d" % (args.ip, args.port)
 
-    client = OSC.OSCClient()
 
     if args.log:
         try:
@@ -198,9 +196,9 @@ if __name__ == "__main__":
             poi2 = None
 
         if args.replay:
-            replay(client, args, replay_file)
+            replay(args, replay_file)
         else:
-            main_loop(poi1, poi2, client, args, log)
+            main_loop(poi1, poi2, args, log)
     except KeyboardInterrupt:
         print "cleaning up..."
         if poi1:
