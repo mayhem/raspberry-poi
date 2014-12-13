@@ -46,13 +46,14 @@ def connect_poi(poi, device):
 
     return ser
 
-def send_osc(ip, port, index, x, y, z, ts):
+def send_osc(ip, port, index, x, y, z, ts, av):
     msg = OSC.OSCMessage()
     msg.setAddress("/rpoi-%d" % index)
     msg.append(x)
     msg.append(y)
     msg.append(z)
     msg.append(ts)
+    msg.append(av)
     client.sendto(msg, (ip, port))
 
 def dotproduct(v1, v2):
