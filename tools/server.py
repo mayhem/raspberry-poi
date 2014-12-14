@@ -85,7 +85,7 @@ def process_line(poi, line, log, last_v, last_t):
     z = math.cos(theta)
     ts = int(ts)
 
-    av = angle_between_vectors((x, y, z), last_v) * AV_SCALE_FACTOR 
+    av = angle_between_vectors((y, z), last_v) * AV_SCALE_FACTOR 
     if args.test:
         print "%d,%d,%.4f,%.4f,%.4f,%.4f" % (ts, poi, x, y, z, av)
 
@@ -95,7 +95,7 @@ def process_line(poi, line, log, last_v, last_t):
     if not args.noxmit:
         send_osc(args.ip, args.port, poi, x, y, z, ts, av)
 
-    return ((x, y, z), ts)
+    return ((y, z), ts)
 
 def replay(args, replay):
     count = 0
