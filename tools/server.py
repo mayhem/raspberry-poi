@@ -11,7 +11,7 @@ import errno
 
 BAUD_RATE = 38400
 SAMPLE_DELAY = .01
-AV_SCALE_FACTOR = 1000
+AV_SCALE_FACTOR = 100
 
 client = OSC.OSCClient()
 
@@ -85,17 +85,17 @@ def process_line(poi, line, log, last_v, last_t):
     z = math.cos(theta)
     ts = int(ts)
 
-    av = angle_between_vectors((x, y, z), last_v) * AV_SCALE_FACTOR 
+    av = angle_between_vectors((x, z), last_v) * AV_SCALE_FACTOR 
     if args.test:
         print "%d,%d,%.4f,%.4f,%.4f,%.4f" % (ts, poi, x, y, z, av)
 
     if args.log:
-        log.write("%d,%d,%.4f,%.4f,%.4f,%.4f\n" % (ts, poi, x, y, z, av))
+        log.write("%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n" % (ts, poi, x, y, z, av, float(yaw), float(pitch), float(roll)))
 
     if not args.noxmit:
         send_osc(args.ip, args.port, poi, x, y, z, ts, av)
 
-    return ((x, y, z), ts)
+    return ((x, z), ts)
 
 def replay(args, replay):
     count = 0
