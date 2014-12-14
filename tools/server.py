@@ -8,6 +8,7 @@ import math
 import argparse
 import OSC
 import errno
+import struct
 
 BAUD_RATE = 38400
 SAMPLE_DELAY = .01
