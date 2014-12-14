@@ -8,6 +8,7 @@ import math
 import argparse
 import OSC
 import errno
+import struct
 
 BAUD_RATE = 38400
 SAMPLE_DELAY = .01
@@ -47,14 +48,17 @@ def connect_poi(poi, device):
     return ser
 
 def send_osc(ip, port, index, x, y, z, ts, av):
-    msg = OSC.OSCMessage()
-    msg.setAddress("/rpoi-%d" % index)
-    msg.append(x)
-    msg.append(y)
-    msg.append(z)
-    msg.append(ts)
-    msg.append(av)
-    client.sendto(msg, (ip, port))
+    try:
+        msg = OSC.OSCMessage()
+        msg.setAddress("/rpoi-%d" % index)
+        msg.append(x)
+        msg.append(y)
+        msg.append(z)
+        msg.append(ts)
+        msg.append(av)
+        client.sendto(msg, (ip, port))
+    except struct.error:
+        print "caught struct error"
 
 def dotproduct(v1, v2):
     return sum((a*b) for a, b in zip(v1, v2))
