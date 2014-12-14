@@ -70,7 +70,7 @@ void setup()
 
 void loop() 
 { 
-    uint8_t i; 
+    uint8_t i,red, blue; 
     float x, y, z;
     float angles[3]; // yaw pitch roll
     float theta, phi;
@@ -83,6 +83,10 @@ void loop()
     x = sin(theta) * cos(phi);
     y = sin(theta) * sin(phi);
     z = cos(theta);
+    
+    red = int((z + 1) * 128)
+    blue = 255 - int((z + 1) * 128)
+    led_color(red, 0, blue);
     
     Serial.print(micros());
     Serial.print(","); 
