@@ -1,0 +1,7 @@
+#N canvas 481 482 450 300 10;
+#X obj 104 77 r tick;
+#X obj 104 99 mod 1000;
+#X obj 104 121 tabread \$1-\$2;
+#X obj 104 143 s \$1-\$2-val-2;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;

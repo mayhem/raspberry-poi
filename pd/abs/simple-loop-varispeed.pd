@@ -1,0 +1,17 @@
+#N canvas 942 279 438 373 10;
+#X obj 36 76 g-variable-speed-playback a \$1 \$2;
+#X obj 231 98 outlet playback-progress;
+#X obj 36 34 sel 0;
+#X msg 36 55 0;
+#X msg 64 55 1;
+#X obj 36 13 r switch-\$3;
+#X obj 36 147 throw~ LEFT;
+#X obj 133 148 throw~ RIGHT;
+#X connect 0 0 6 0;
+#X connect 0 1 7 0;
+#X connect 0 2 1 0;
+#X connect 2 0 3 0;
+#X connect 2 1 4 0;
+#X connect 3 0 0 0;
+#X connect 4 0 0 0;
+#X connect 5 0 2 0;
