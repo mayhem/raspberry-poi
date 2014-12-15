@@ -1,5 +1,5 @@
 #N canvas 122 56 569 336 10;
-#N canvas 0 22 450 278 (subpatch) 0;
+#N canvas 0 26 450 278 (subpatch) 0;
 #X array \$1-av 1000 float 0;
 #X coords 0 1000 999 0 200 140 1 0 0;
 #X restore 101 140 graph;
@@ -11,7 +11,6 @@
 #X msg 430 123 0;
 #X obj 349 30 r \$1-av-val;
 #X obj 349 196 tabwrite \$1-av;
-#X text 114 59 current = (previous*0.9+current)/2;
 #X connect 1 0 8 0;
 #X connect 1 1 2 0;
 #X connect 2 0 3 0;
